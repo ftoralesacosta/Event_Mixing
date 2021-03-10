@@ -327,7 +327,7 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
 	//pairing solution with events that are very similar. Block size can be reduced to 1000 if limited N events.
 	
 	int max_remainder_events = block_size/4; //max number of events not used if nevents/block_size don't divide evenly.
-	size_t nblocks = (std::min(nevent_0, nevent_1 * nduplicate) / block_size);
+	size_t nblocks_temp = (std::min(nevent_0, nevent_1 * nduplicate) / block_size);
 	while (nevent_0%block_size > max_remainder_events) 
 	  {
 	    block_size --;
