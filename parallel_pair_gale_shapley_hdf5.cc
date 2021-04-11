@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include <omp.h>
-#include "H5Cpp.h"
+#include <H5Cpp.h>
 
 //#define HI_TREE "hiEvtAnalyzer/HiTree"
 #define HI_TREE "_tree_event"
@@ -445,8 +445,8 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
     //ensure n_events/blocksize doesn't have too large of a remainder.
   }
 
-  //const size_t nblocks_0 = nevent_0 / block_size;
-  const size_t nblocks_0 = 2;
+  /* const size_t nblocks_0 = 2; */
+  const size_t nblocks_0 = nevent_0 / block_size;
   const size_t nblocks_1 = ((nevent_1 * nduplicate)/block_size);
 
   //For even distribution of MB events
@@ -592,33 +592,56 @@ void write_root(std::map<size_t,std::vector<Long64_t> > Matches,
   std::string rawname = std::string(filename_0).substr(0, lastindex);
 
   TFile *newfile = new TFile(Form("%s_%luGeVTrack_paired_hdf5.root",rawname.data(),Track_Skim),"recreate");
+  /* fprintf(stderr,"%d: Right Before Clone\n",__LINE__); */
   TTree *newtree = hi_tree->CloneTree(0);
 
   ULong64_t nentries = hi_tree->GetEntries();    
-  Long64_t Mix_Events[n_mix_events];
+  unsigned int n_mix = Matches[0].size();
+  Long64_t Mix_Events[n_mix];
 
-  TBranch *MixE = newtree->Branch("mixed_events", Mix_Events, Form("&mixed_events[%i]/L",n_mix_events));
+  /* fprintf(stderr,"%d: Before ME branch is made\n",__LINE__); */
+  TBranch *MixE = newtree->Branch("mixed_events", Mix_Events, Form("&mixed_events[%ui]/L",n_mix));
 
   for (ULong64_t t = 0; t<nentries;t++){ //Event # is key used in map <Matches>
 
+  /* fprintf(stderr,"%d: Writing for event number %i  \n",__LINE__,t); */
     hi_tree->GetEntry(t);
 
-    if(t < Matches.size()){
-
-      for (size_t s=0; s<(Matches[t]).size();s++){
+    if (t < Matches.size()) {
+      for (size_t s=0; t<Matches[0].size();t++)
+      { 
+        fprintf(stderr,"%d: %i>%i Filling With Mixed Event %i\n",__LINE__,t,s,Matches[t][s]);
         Mix_Events[s]=Matches[t][s]; 
       }
-    }	    
-    //small remainder of unpared events due to block structure
-    else if (t >= Matches.size()){
-      for(size_t u = 0; u<n_mix_events; u++)
-        Mix_Events[u] = NAN;
     }
 
+    else
+      for(size_t s = 0; s<n_mix; s++)
+      {
+        /* fprintf(stderr,"%d: %i>%i Filling With NAN \n",__LINE__,t,s); */
+        Mix_Events[s] = NAN;
+      }
+    /* if(t < Matches.size()){ */
+
+    /*   for (size_t s=0; s<(Matches[t]).size();s++){ */
+    /*     fprintf(stderr,"%d: %i Mixed Event Number = %lu \n",__LINE__,s,Matches[t][s]); */
+    /*     Mix_Events[s]=Matches[t][s]; */ 
+    /*   } */
+    /*   fprintf(stderr,"\n"); */
+    /* } */	    
+    /* //small remainder of unpared events due to block structure */
+    /* else if (t >= Matches.size()){ */
+    /*   for(size_t u = 0; u<n_mix_events; u++){ */
+    /*     fprintf(stderr,"%d: Right Before Fill \n",__LINE__); */
+    /*     Mix_Events[u] = NAN; */
+    /*   } */
+    /* } */
+    /* fprintf(stderr,"%d: Right Before Fill \n",__LINE__); */
     newtree->Fill();  
 
   }//entries
 
+  fprintf(stderr,"%d: Right Before Write\n",__LINE__);
   newtree->Write();
 
   delete root_file;
@@ -646,5 +669,5 @@ int main(int argc, char *argv[])
   //std::map<size_t,std::vector<Long64_t> >	Matches = mix_gale_shapley(argv[1], argv[2], argv[3], argv[4],argv[5], 2, 1);
 
   write_txt(Matches,root_file,mix_start,mix_end,track_skim);
-//  write_root(Matches,root_file,track_skim,mix_end-mix_start);
+  write_root(Matches,root_file,track_skim,mix_end-mix_start);
 }
