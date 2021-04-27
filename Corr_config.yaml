@@ -12,10 +12,7 @@ Cluster_min:                  2
 Cluster_dist_to_bad_channel:  1
 Cluster_N_Local_Maxima:       3.0
 Cluster_Time:		      20 #ns
-EcrossoverE_min:              0.05
 iso_max:                      1.5
-noniso_min:                   5.0
-noniso_max:                   10.0
 
 do_pileup_cut:		      false
 
