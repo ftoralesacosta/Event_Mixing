@@ -1,0 +1,47 @@
+pT_min:			      12
+pT_max:                       40
+
+Lambda0_cut:                  0.3
+
+Eta_max:                      0.67
+Cluster_min:                  2
+Cluster_dist_to_bad_channel:  1
+Cluster_N_Local_Maxima:       3.0
+Cluster_Time:		      20 #ns
+EcrossoverE_min:              0.05
+iso_max:                      1.5
+noniso_min:                   5.0
+noniso_max:                   10.0
+
+do_pileup_cut:		      false
+
+N_Phi_Bins:                   16
+N_Eta_Bins:                   14
+Track_pT_Min:		      0.500
+Track_pT_Max:		      10.0
+#Track_pT_Max:		      6.0
+Track_Chi_Max:		      36
+#Track_Chi_Max:		      3
+Track_Cut_Bit:                16	
+#Track_Cut_Bit:               3 #For TPC Configuration Cut Bit. DOES NOT WORK WITH PROTON PROTON
+
+Purity_Dev:		       None
+#Purity_Dev:		       Plus
+#Purity_Dev:		       Minus
+
+#Zt_bins:		       [0.060, 0.088, 0.129, 0.190, 0.278, 0.409, 0.600] #6
+#Zt_bins:		       [0.060, 0.083, 0.116, 0.161, 0.224, 0.311, 0.432, 0.600] #7
+Zt_bins:		       [0.060, 0.080, 0.107, 0.142, 0.190, 0.253, 0.337, 0.450, 0.600] #8 0.06 - 0.6zT DEFAULT
+#Zt_bins:		       [0.060, 0.077, 0.100, 0.129, 0.167, 0.216, 0.278, 0.360, 0.465, 0.600] #9
+
+Pt_bins:		       [12, 40] #CHANGE ABOVE ASWELL -----
+#Pt_bins:		       [12,15,20,25,40] #2 pT Bins
+#Pt_bins:		       [12,22,40] #2 pT Bins
+#Pt_bins:		       [12.00, 17.93, 26.78, 40.00] #3 pT Bins
+
+
+Cluster_isolation_determinant: cluster_iso_its_04_sub
+#Cluster_isolation_determinant: cluster_iso_tpc_04_sub
+#Cluster_isolation_determinant: cluster_iso_its_04
+
+Shower_Shape:		       Lambda
