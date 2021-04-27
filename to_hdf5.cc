@@ -132,7 +132,8 @@ void write_track_cluster(H5::DataSet &event_data_set, H5::DataSet &track_data_se
         std::vector<Float_t> cluster_eta(ncluster_max, NAN);
         std::vector<Float_t> cluster_phi(ncluster_max, NAN);
         std::vector<Float_t> cluster_e_cross(ncluster_max, NAN);
-        std::array<std::array<Float_t, 2>, 500 > cluster_sigma;
+        /* std::array<std::array<Float_t, 2>, 500 > cluster_sigma; */
+        Float_t cluster_lambda_square[500][2];
         //This is a similar workaround to convert_sample.cc line 241. i.e. NCLUSTER_MAX
 
         /* std::vector< std::vector<Float_t> > cluster_sigma(ncluster_max, std::vector<Float_t>(2, NAN)); */
@@ -170,6 +171,7 @@ void write_track_cluster(H5::DataSet &event_data_set, H5::DataSet &track_data_se
         hi_tree->SetBranchAddress("cluster_phi", &cluster_phi[0]);
 
         /* hi_tree->SetBranchAddress("cluster_lambda_square", &cluster_sigma[0][0]); */
+        hi_tree->SetBranchAddress("cluster_lambda_square",cluster_lambda_square);
         /* hi_tree->SetBranchAddress("cluster_lambda_square", cluster_sigma.data()); */
         hi_tree->SetBranchAddress("cluster_e_cross", &cluster_e_cross[0]);
         //hi_tree->SetBranchAddress("cluster_s_nphoton", &cluster_s_nphoton[0]);
@@ -243,20 +245,20 @@ void write_track_cluster(H5::DataSet &event_data_set, H5::DataSet &track_data_se
             cluster_data[iblock*ncluster_max*5 + n*5 + 1] = cluster_pt[n];
             cluster_data[iblock*ncluster_max*5 + n*5 + 2] = cluster_eta[n];
             cluster_data[iblock*ncluster_max*5 + n*5 + 3] = cluster_phi[n];
-            /* cluster_data[iblock*ncluster_max*5 + n*5 + 4] = cluster_sigma[n][0]; //sigma_0^2 */
-            cluster_data[iblock*ncluster_max*5 + n*5 + 4] = cluster_e_cross[n];
+            cluster_data[iblock*ncluster_max*5 + n*5 + 4] = cluster_lambda_square[n][0]; //sigma_0^2
+            /* cluster_data[iblock*ncluster_max*5 + n*5 + 4] = cluster_e_cross[n]; */
             //cluster_data[j * 7 + 5] = cluster_s_nphoton[j][0];
             //cluster_data[j * 7 + 6] = cluster_s_nphoton[j][1];
           }
           
-          if (i%10000 == 0){
+          if (i%1000 == 0){
             std::cout<<"Cluster Info: \n";
             std::cout<<cluster_e[0]<<std::endl;
             std::cout<<cluster_eta[0]<<std::endl;
             std::cout<<cluster_phi[0]<<std::endl;
             std::cout<<cluster_pt[0]<<std::endl;
-            /* std::cout<<cluster_sigma[0][0]<<std::endl; */
-            std::cout<<cluster_e_cross[0]<<std::endl;
+            std::cout<<cluster_lambda_square[0][0]<<std::endl;
+            //std::cout<<cluster_e_cross[0]<<std::endl;
           }
 
           for (Long64_t j = 0; j < njet_ak04tpc; j++) {
@@ -453,29 +455,29 @@ void write_track_cluster(H5::DataSet &event_data_set, H5::DataSet &track_data_se
       H5::DSetCreatPropList cluster_property = H5::DSetCreatPropList();
       H5::DSetCreatPropList jet_property = H5::DSetCreatPropList();
 
-      // #ifdef HDF5_USE_DEFLATE
-      //     // Check for zlib (deflate) availability and enable only if
-      //     // present
-      //     if (!H5Zfilter_avail(H5Z_FILTER_DEFLATE)) {
-      //         fprintf(stderr, "%s:%d: warning: deflate filter not "
-      //                 "available\n", __FILE__, __LINE__);
-      //     }
-      //     else {
-      //         unsigned int filter_info;
+       #ifdef HDF5_USE_DEFLATE
+           // Check for zlib (deflate) availability and enable only if
+           // present
+           if (!H5Zfilter_avail(H5Z_FILTER_DEFLATE)) {
+               fprintf(stderr, "%s:%d: warning: deflate filter not "
+                       "available\n", __FILE__, __LINE__);
+           }
+           else {
+               unsigned int filter_info;
 
-      //         H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filter_info);
-      //         if (!(filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
-      //             fprintf(stderr, "%s:%d: warning: deflate filter not "
-      //                     "available for encoding\n", __FILE__, __LINE__);
-      //         }
-      //         else {
-      //             event_property.setDeflate(1);
-      //             track_property.setDeflate(1);
-      //             cluster_property.setDeflate(1);
-      //             jet_property.setDeflate(1);
-      //         }
-      //     }
-      // #endif // HDF5_USE_DEFLATE
+               H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filter_info);
+               if (!(filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
+                   fprintf(stderr, "%s:%d: warning: deflate filter not "
+                           "available for encoding\n", __FILE__, __LINE__);
+               }
+               else {
+                   event_property.setDeflate(1);
+                   track_property.setDeflate(1);
+                   cluster_property.setDeflate(1);
+                   jet_property.setDeflate(1);
+               }
+           }
+       #endif // HDF5_USE_DEFLATE
 
       // Activate chunking, while observing the HDF5_DEFAULT_CACHE being
       // the CPU L2 cache size
