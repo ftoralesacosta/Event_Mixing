@@ -219,9 +219,11 @@ namespace {
 	  //normalize vectors such that event properties with very different magnitudes can be equally weighted in pairing
     //ex: multiplicity can range from 0-1,000. But z-vertex only ranges from 0-10. Normalization is needed to pair
     //events with both criteria simoultaneously.
+
     std::vector<float> s(n, 0);
     for (size_t j = 0; j < n; j++) {
       float s_j = 0;
+
       for (size_t i = 0; i < u.size(); i += n) {
         s_j += fabsf(u[i + j]);
       }
