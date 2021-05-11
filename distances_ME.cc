@@ -246,9 +246,9 @@ int main(int argc, char *argv[])
   TH1D* Multiplicity_hdf5 = new TH1D("Multplicity_hdf5", "Multiplicity (hdf5)", 500, 0, 1000);
   TH1D* Multiplicity = new TH1D("Delta_Multiplicity", "#Delta Multiplicit Distribution", 500, 0, 1000);
 
-  TH1D* flow_individual= new TH1D("Flow_root", "Flow (ROOT)", 1000, 0, 1000);
-  TH1D* flow_hdf5= new TH1D("Flow_hdf5", "Flow (hdf5)", 500, 0, 1000);
-  TH1D* flow= new TH1D("Delta_Flow", "#Delta Flow Distribution", 500, 0, 1000);
+  TH1D* flow_individual= new TH1D("Flow_root", "Flow (ROOT)", 1000, -5, 5);
+  TH1D* flow_hdf5= new TH1D("Flow_hdf5", "Flow (hdf5)", 500, -5, 5);
+  TH1D* flow= new TH1D("Delta_Flow", "#Delta Flow Distribution", 500, -5, 5);
 
   TH2D* N_ME = new TH2D("N_ME", "Distribution No. Mixed Events Passed",300,0,300,500,0,1000);
 
@@ -409,7 +409,8 @@ int main(int argc, char *argv[])
 
 
   //MONEY MAKING LOOP
-  Long64_t nentries = _tree_event->GetEntries();
+  /* Long64_t nentries = _tree_event->GetEntries(); */
+  Long64_t nentries = 10000;
 
   for(Long64_t ievent = 0; ievent < nentries ; ievent++){
     _tree_event->GetEntry(ievent);
@@ -426,29 +427,30 @@ int main(int argc, char *argv[])
     //Cuts/Variables from the ROOT file go here
     for (Long64_t imix = mix_start; imix < mix_end; imix++){
       Long64_t mix_event = mix_events[imix];
-      fprintf(stderr,"\n %s:%d: Mixed event = %lu",__FILE__,__LINE__,mix_event);
+      /* fprintf(stderr,"\n %s:%d: Mixed event = %lu",__FILE__,__LINE__,mix_event); */
 
       //if (mix_event == ievent) continue; //not needed for gamma-MB pairing: Different Triggers
       if(mix_event >= 9999999) continue;
 
       //adjust offset for next mixed event
+      //this offset makes the first element in the slab equal to mix_events[imix];
       event_offset[0]=mix_event;
       event_dataspace.selectHyperslab( H5S_SELECT_SET, event_count, event_offset );
       event_dataset.read( event_data_out, PredType::NATIVE_FLOAT, event_memspace, event_dataspace );
 
       //fprintf(stderr,"\n%s %d: hdf5= %f, root =  %f, diff =  %f \n",__FILE__,__LINE__,event_data_out[0][0],primary_vertex[2],TMath::Abs(event_data_out[0][0] - primary_vertex[2]));
 
-      z_Vertices->Fill(TMath::Abs(event_data_out[imix][0] - primary_vertex[2]));
-      z_Vertices_hdf5->Fill(event_data_out[imix][0]);
+      z_Vertices->Fill(TMath::Abs(event_data_out[0][0] - primary_vertex[2]));
+      z_Vertices_hdf5->Fill(event_data_out[0][0]);
 
-      float DeltaM = TMath::Abs(event_data_out[imix][1] - multiplicity_sum);
+      float DeltaM = TMath::Abs(event_data_out[0][1] - multiplicity_sum);
       if (DeltaM < 40)
         Mix_Counter ++;
-      Multiplicity->Fill(TMath::Abs(event_data_out[imix][1] - multiplicity_sum));
-      Multiplicity_hdf5->Fill(event_data_out[imix][1]);
+      Multiplicity->Fill(TMath::Abs(event_data_out[0][1] - multiplicity_sum));
+      Multiplicity_hdf5->Fill(event_data_out[0][1]);
 
-      flow->Fill(TMath::Abs(event_data_out[imix][2] - event_plane_angle[1]));
-      flow_hdf5->Fill(event_data_out[imix][2]);      
+      flow->Fill(TMath::Abs(event_data_out[0][2] - event_plane_angle[1]));
+      flow_hdf5->Fill(event_data_out[0][2]);      
 
     }//end loop over mixed events
     // if(ievent % 10000 == 0)
@@ -469,10 +471,13 @@ int main(int argc, char *argv[])
 
   z_Vertices->Write();
   Multiplicity->Write();
+  flow->Write();
   z_Vertices_individual->Write();
   z_Vertices_hdf5->Write();
   Multiplicity_individual->Write();
   Multiplicity_hdf5->Write();
+  flow_individual->Write();
+  flow_hdf5->Write();
   N_ME->Write();
 
   // z_Vertices->Draw();
