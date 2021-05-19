@@ -1,5 +1,5 @@
-Cluster_pT_min:			                  15
-Cluster_pT_max:                       40
+pT_min:			                  15
+pT_max:                       40
 
 Jet_pT_min:                   5.0
 #Jet_pT_max:                   50.0
@@ -13,6 +13,7 @@ Cluster_dist_to_bad_channel:  1
 Cluster_N_Local_Maxima:       3.0
 Cluster_Time:		      20 #ns
 iso_max:                      1.5
+EcrossoverE_min:              10 #placeholder
 
 do_pileup_cut:		      false
 

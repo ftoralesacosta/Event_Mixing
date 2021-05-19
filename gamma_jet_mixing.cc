@@ -339,24 +339,17 @@ int main(int argc, char *argv[])
 
     //Cuts/Variables from the ROOT file go here
 
-    for (Long64_t imix = mix_start; imix < mix_end+1; imix++){
+    for (Long64_t imix = mix_start; imix < mix_end; imix++){
       Long64_t mix_event = mix_events[imix];
       fprintf(stderr,"\n %s:%d: Mixed event = %lu",__FILE__,__LINE__,mix_event);
 
-      //if (mix_event == ievent) continue; //not needed for gamma-MB pairing: Different Triggers
-      if(mix_event >= 9999999) continue;  
+      if(mix_event  < 0) continue; //unpaired triggered events set to negative pairings 
 
       //adjust offset for next mixed event
       jet_offset[0]=mix_event;
       jet_dataspace.selectHyperslab( H5S_SELECT_SET, jet_count, jet_offset );
       jet_dataset.read( jet_data_out, PredType::NATIVE_FLOAT, jet_memspace, jet_dataspace );
 
-      /* IMPORTANT */
-      /* jet_data_out[0][ijet][n_variables] */
-      /* Jet Variariable 0 = jet_ak04tpc_pt_raw */
-      /* Jet Variariable 1 = jet_ak04tpc_eta_raw */
-      /* Jet Variariable 2 = jet_ak04tpc_phi */
-      
       for (ULong64_t ijet = 0; ijet < njet_max; ijet++) {
         if (std::isnan(jet_data_out[0][ijet][0])) continue;
         if (jet_data_out[0][ijet][0] < 5.) continue; //greater than 5.0 GeV

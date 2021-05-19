@@ -8,7 +8,7 @@ ifeq ($(findstring g++,$(CXX)),g++)
     CXXFLAGS += -no-canonical-prefixes -Wno-builtin-macro-redefined \
                 -D__DATE__="redacted" -D__TIMESTAMP__="redacted" \
                 -D__TIME__="redacted" -U_FORTIFY_SOURCE \
-                -D_FORTIFY_SOURCE=1 -fstack-protector
+                -D_FORTIFY_SOURCE=1 -fstack-protector -fopenmp
 endif
 CXXFLAGS +=     -std=c++11
 CXXFLAGS +=	$(shell root-config --cflags)
