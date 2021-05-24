@@ -86,27 +86,26 @@ int main(int argc, char *argv[])
   std::cout<<"Opened Text File: "<<argv[2]<<std::endl;
 
   const Long64_t nevents = _tree_event->GetEntries();
-  /* const Long64_t nevents = 10000; */ 
+  /* const Long64_t nevents = 10; */ 
   // Loop over events
   for(Long64_t ievent = 0; ievent < nevents ; ievent++){
-  /* for(Long64_t ievent = 0; ievent < 100; ievent++){ */
 
     fprintf(stderr, "\r%s:%d: %llu / %llu", __FILE__, __LINE__, ievent, _tree_event->GetEntries());
     _tree_event->GetEntry(ievent);
     
-    // Get the appropriate line from each file, break out of the loop if you hit an empty file
     std::string eventline;
-    if (ievent != 0){
-      getline(mixed_textfile, eventline); //skips \n after each triggered event's pairings list
+    if (ievent > 0){
+      //skips \n that separates each triggered event's pairings list
+      getline(mixed_textfile, eventline); 
     }
+    //Should now grab the list of MB events from the text file if not eof
     getline(mixed_textfile, eventline);
 
-    if (eventline == "")
+    if (eventline.size() == 0 )
     {
       for (int m = 0; m < 300; m++)
       mixed_events[m] = -999;
     }
-    /* std::cout<<"event line = "<<eventline<<std::endl; */
 
     else
     { /*if eventline != "" */
@@ -120,8 +119,8 @@ int main(int argc, char *argv[])
       for(int m = 0; m < mix_range; m++) {
         currentindex = m/mix_range;
         getline(parser[currentindex], mixednum_string, '\t');
-        /* std::cout<<currentindex<<" "<<mixednum_string<<std::endl; */
         mixed_events[m] = stoul(mixednum_string);
+        /* std::cout<<currentindex<<" "<<mixednum_string<<std::endl; */
       }
     }
     newtree->Fill();
@@ -130,8 +129,7 @@ int main(int argc, char *argv[])
   /* newtree->AutoSave(); */
   newtree->Write();
   std::cout << "Successful autosave" <<std::endl;
-  /* delete newfile; */
-  /* delete file; */
+  delete newfile;
   /* std::cout << "Deleted newfile" << std::endl; */
 
   std::cout << " ending " << std::endl;

@@ -427,10 +427,10 @@ int main(int argc, char *argv[])
     //Cuts/Variables from the ROOT file go here
     for (Long64_t imix = mix_start; imix < mix_end; imix++){
       Long64_t mix_event = mix_events[imix];
-      /* fprintf(stderr,"\n %s:%d: Mixed event = %lu",__FILE__,__LINE__,mix_event); */
+      fprintf(stderr,"\n %s:%d: Mixed event = %lu",__FILE__,__LINE__,mix_event);
 
       //if (mix_event == ievent) continue; //not needed for gamma-MB pairing: Different Triggers
-      if(mix_event >= 9999999) continue;
+      if(mix_event < 0 ) continue;
 
       //adjust offset for next mixed event
       //this offset makes the first element in the slab equal to mix_events[imix];
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
       event_dataspace.selectHyperslab( H5S_SELECT_SET, event_count, event_offset );
       event_dataset.read( event_data_out, PredType::NATIVE_FLOAT, event_memspace, event_dataspace );
 
-      //fprintf(stderr,"\n%s %d: hdf5= %f, root =  %f, diff =  %f \n",__FILE__,__LINE__,event_data_out[0][0],primary_vertex[2],TMath::Abs(event_data_out[0][0] - primary_vertex[2]));
+      fprintf(stderr,"\n%s %d: hdf5= %f, root =  %f, diff =  %f \n",__FILE__,__LINE__,event_data_out[0][0],primary_vertex[2],TMath::Abs(event_data_out[0][0] - primary_vertex[2]));
 
       z_Vertices->Fill(TMath::Abs(event_data_out[0][0] - primary_vertex[2]));
       z_Vertices_hdf5->Fill(event_data_out[0][0]);
