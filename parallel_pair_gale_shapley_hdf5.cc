@@ -104,6 +104,7 @@ namespace {
  			        float multp_sum = 0;
 			        for (int k = 0; k < 64; k++) {
 				  multp_sum += multiplicity_v0[k];
+				  /* multp_sum += (multiplicity_v0[k]/100); */
 				}
 				ret.push_back(multp_sum);
 
@@ -198,7 +199,8 @@ namespace {
 		  ret.push_back(z_vtx);
 		  if (nfeature >= 2) {
 		    float multp = event_data_out[i][1];
-		    ret.push_back(multp);
+		    /* ret.push_back(multp); */
+		    ret.push_back(multp/100.);
 		    if (nfeature >=3){
           float v2 = event_data_out[i][2];
           ret.push_back(v2);//index 2 is v1, 3 is v2, 4 is v3
@@ -246,10 +248,10 @@ namespace {
 
       for (size_t i = 0; i < v.size(); i += n) {
         s_j += fabsf(v[i + j]);
-        /* if (j==0 && i/3>1997){ */
-        /*   fprintf(stderr,"%s: %d: i = %i, z = %f, mp = %f, v2 = %f \n",__func__,__LINE__,i/3,v[i+0],v[i+1],v[i+2]); */
-          /* fprintf(stderr,"%s: %d: v[i + j] = %f\n",__func__,__LINE__,v[i + j]); */
-        /* } */
+        if (j==0 && i/3>1997){
+          fprintf(stderr,"%s: %d: i = %i, z = %f, mp = %f, v2 = %f \n",__func__,__LINE__,i/3,v[i+0],v[i+1],v[i+2]);
+          fprintf(stderr,"%s: %d: v[i + j] = %f\n",__func__,__LINE__,v[i + j]);
+        }
       }
       s[j] += s_j;
     }
