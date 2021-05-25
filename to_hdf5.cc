@@ -107,7 +107,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<Double_t> primary_vertex(3, NAN);
       std::vector<Float_t> multiplicity_v0(64, NAN);//64 channels for v0 detector, to be summed
       std::vector<Float_t> event_plane_angle(3,NAN); //directed/eliptic/triangular
-      std::vector<Float_t> centrality(1,NAN);
+      Float_t centrality;
       /* Long64_t mix_events[300]; */
 
       UInt_t ntrack;
@@ -115,10 +115,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<Float_t> track_pt(ntrack_max, NAN);
       std::vector<Float_t> track_eta(ntrack_max, NAN);
       std::vector<Float_t> track_phi(ntrack_max, NAN);
-      std::vector<UChar_t> track_quality(ntrack_max, NAN);
+      std::vector<UChar_t> track_quality(ntrack_max,64);
       std::vector<Float_t> track_eta_emcal(ntrack_max, NAN);
       std::vector<Float_t> track_phi_emcal(ntrack_max, NAN);
-      std::vector<UChar_t> track_tpc_ncluster(ntrack_max, NAN);
+      std::vector<UChar_t> track_tpc_ncluster(ntrack_max,0);
       //std::vector<Float_t> track_tpc_chi_square(ntrack_max, NAN);
       std::vector<Float_t> track_dca_xy(ntrack_max, NAN);
       std::vector<Float_t> track_dca_z(ntrack_max, NAN);
@@ -175,13 +175,13 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<Float_t> jet_ak04tpc_eta_raw(njet_max, NAN);
       std::vector<Float_t> jet_ak04tpc_phi(njet_max, NAN);
       std::vector<Float_t> jet_ak04tpc_ptd_raw(njet_max, NAN);
-      std::vector<UShort_t> jet_ak04tpc_multiplicity_raw(njet_max, NAN);
+      std::vector<UShort_t> jet_ak04tpc_multiplicity_raw(njet_max,0);
       // std::vector<Float_t> jet_ak04tpc_width_sigma(njet_max, NAN);
 
       _tree_event->SetBranchAddress("primary_vertex", &primary_vertex[0]);
       _tree_event->SetBranchAddress("multiplicity_v0", &multiplicity_v0[0]);
       _tree_event->SetBranchAddress("event_plane_psi_v0", &event_plane_angle[0]);
-      _tree_event->SetBranchAddress("centrality", &centrality[0]);
+      _tree_event->SetBranchAddress("centrality", &centrality);
       /* _tree_event->SetBranchAddress("mixed_events",mix_events); */
 
       _tree_event->SetBranchAddress("ntrack", &ntrack);
@@ -260,8 +260,8 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<float> jet_data(block_size * njet_max * jet_row_size, NAN);
 
       //for (Long64_t i = 0; i < _tree_event->GetEntries(); i++) {
-      /* for (Long64_t i = 0; i < nevent_max; i++) { */
-      for (Long64_t i = 0; i <4001; i++) {
+      for (Long64_t i = 0; i < nevent_max; i++) {
+      /* for (Long64_t i = 0; i <4001; i++) { */
         _tree_event->GetEntry(i);
 
         int iblock = i % block_size;
@@ -272,7 +272,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         event_data[iblock*event_row_size + 0] = primary_vertex[2]; //xyz, choose 3rd element, z
         event_data[iblock*event_row_size + 1] = multiplicity_sum;
         event_data[iblock*event_row_size + 2] = event_plane_angle[1]; //elliptic flow
-        event_data[iblock*event_row_size + 3] = centrality[0];
+        event_data[iblock*event_row_size + 3] = centrality;
         //event_data[iblock*nEventVariables + 2] = event_plane_angle[0]; //directed flow
 
         for (Long64_t j = 0; j < ntrack; j++) {
@@ -497,11 +497,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       UInt_t njet_max = 0;
       UInt_t block_size = 2000; //affects chunk size, used from pairing
 
-      /* find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max); */
+      find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
 
-      nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52;
-      /* nevent_max = 4001; */
-      /* nevent_max = 882814; */
+      /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; 18q_pass3_cluster15*/
+      /* nevent_max = 882814; ntrack_max = 4499; ncluster_max = 468; njet_max = 52; //18q_mb*/
       /* nevent_max =10000; */
       /* ntrack_max = 4499; */
       /* ncluster_max = 468; */
