@@ -181,7 +181,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       _tree_event->SetBranchAddress("primary_vertex", &primary_vertex[0]);
       _tree_event->SetBranchAddress("multiplicity_v0", &multiplicity_v0[0]);
       _tree_event->SetBranchAddress("event_plane_psi_v0", &event_plane_angle[0]);
-      _tree_event->SetBranchAddress("centrality", &centrality);
+      _tree_event->SetBranchAddress("centrality_v0m", &centrality);
       /* _tree_event->SetBranchAddress("mixed_events",mix_events); */
 
       _tree_event->SetBranchAddress("ntrack", &ntrack);
@@ -259,7 +259,6 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<float> cluster_data(block_size * ncluster_max *cluster_row_size, NAN);
       std::vector<float> jet_data(block_size * njet_max * jet_row_size, NAN);
 
-      //for (Long64_t i = 0; i < _tree_event->GetEntries(); i++) {
       for (Long64_t i = 0; i < nevent_max; i++) {
       /* for (Long64_t i = 0; i <4001; i++) { */
         _tree_event->GetEntry(i);
@@ -276,7 +275,6 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         //event_data[iblock*nEventVariables + 2] = event_plane_angle[0]; //directed flow
 
         for (Long64_t j = 0; j < ntrack; j++) {
-          // Note HDF5 is always row-major (C-like)
           track_data[(iblock*ntrack_max + j)*track_row_size + 0] = track_e[j];
           track_data[(iblock*ntrack_max + j)*track_row_size + 1] = track_pt[j];
           track_data[(iblock*ntrack_max + j)*track_row_size + 2] = track_eta[j];
@@ -287,21 +285,6 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           track_data[(iblock*ntrack_max + j)*track_row_size + 7] = track_tpc_ncluster[j];
           track_data[(iblock*ntrack_max + j)*track_row_size + 8] = track_dca_xy[j];
           track_data[(iblock*ntrack_max + j)*track_row_size + 9] = track_dca_z[j];
-        }
-
-        if (i%100000 == 0){
-          std::cout<<"Track Info:\n";
-          std::cout<<track_e[0]<<"\n";
-          std::cout<<track_pt[0]<<"\n";
-          std::cout<<track_eta[0]<<"\n";
-          std::cout<<track_phi[0]<<"\n";
-          std::cout<<track_quality[0]<<"\n";
-          std::cout<<track_eta_emcal[0]<<"\n";
-          std::cout<<track_phi_emcal[0]<<"\n";
-          std::cout<<track_tpc_ncluster[0]<<"\n";
-          std::cout<<track_dca_xy[0]<<"\n";
-          std::cout<<track_dca_z[0]<<"\n";
-
         }
 
         for(Long64_t n = 0; n < ncluster; n++){
@@ -346,16 +329,6 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 4] = cluster_lambda_square[n][0]; //sigma_0^2 */
         }
 
-        if (i%100000 == 0){
-          std::cout<<"Cluster Info: \n";
-          std::cout<<cluster_e[0]<<std::endl;
-          std::cout<<cluster_eta[0]<<std::endl;
-          std::cout<<cluster_phi[0]<<std::endl;
-          std::cout<<cluster_pt[0]<<std::endl;
-          std::cout<<cluster_lambda_square[0][0]<<std::endl;
-          //std::cout<<cluster_e_cross[0]<<std::endl;
-        }
-
         for (Long64_t j = 0; j < njet_ak04tpc; j++) {
           jet_data[(iblock*njet_max + j)*jet_row_size + 0] = jet_ak04tpc_pt_raw[j];
           jet_data[(iblock*njet_max + j)*jet_row_size + 1] = jet_ak04tpc_eta_raw[j];
@@ -363,27 +336,59 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           jet_data[(iblock*njet_max + j)*jet_row_size + 3] = jet_ak04tpc_ptd_raw[j];
           jet_data[(iblock*njet_max + j)*jet_row_size + 4] = jet_ak04tpc_multiplicity_raw[j];
         }
-        if (i%100000 == 0){
-          std::cout<<"Jet Info: \n";
-          std::cout<<jet_ak04tpc_pt_raw[0]<<std::endl;
-          std::cout<<jet_ak04tpc_eta_raw[0]<<std::endl;
-          std::cout<<jet_ak04tpc_phi[0]<<std::endl;
-          std::cout<<jet_ak04tpc_ptd_raw[0]<<std::endl;
-          std::cout<<jet_ak04tpc_multiplicity_raw[0]<<std::endl;
-        }
+
+        bool print_stuff = true;
+        if (print_stuff){
+
+          if (i%100000 == 0){
+
+            std::cout<<"Event Info:\n";
+            std::cout<<"z-vertex = "<<primary_vertex[2]<<"\n";
+            std::cout<<"multilplicity = "<<multiplicity_sum<<"\n";
+            std::cout<<"v2 flow = "<<event_plane_angle[1]<<"\n";
+            std::cout<<"centrality = "<<centrality<<"\n";
+            std::cout<<"\n";
+
+            std::cout<<"Track Info:\n";
+            std::cout<<"track E = "<<track_e[0]<<"\n";
+            std::cout<<"track pT = "<<track_pt[0]<<"\n";
+            std::cout<<"track Eta = "<<track_eta[0]<<"\n";
+            std::cout<<"track Phi = "<<track_phi[0]<<"\n";
+            std::cout<<"track quality = "<<track_quality[0]<<"\n";
+            std::cout<<"track Eta_EMCal = "<<track_eta_emcal[0]<<"\n";
+            std::cout<<"track Phi_EMCal = "<<track_phi_emcal[0]<<"\n";
+            std::cout<<"track TPC NCluster = "<<track_tpc_ncluster[0]<<"\n";
+            std::cout<<"track DCA XY = "<<track_dca_xy[0]<<"\n";
+            std::cout<<"track DCA Z = "<<track_dca_z[0]<<"\n";
+            std::cout<<"\n";
+
+            std::cout<<"Cluster Info: \n";
+            std::cout<<"cluster E = "<<cluster_e[0]<<std::endl;
+            std::cout<<"cluster Eta = "<<cluster_eta[0]<<std::endl;
+            std::cout<<"cluster Phi = "<<cluster_phi[0]<<std::endl;
+            std::cout<<"cluster Pt = "<<cluster_pt[0]<<std::endl;
+            std::cout<<"cluster Lamda_0^2 = "<<cluster_lambda_square[0][0]<<std::endl;
+            //std::cout<<cluster_e_cross[0]<<std::endl;
+            std::cout<<"\n";
+
+            std::cout<<"Jet Info: \n";
+            std::cout<<"jet pT raw = "<<jet_ak04tpc_pt_raw[0]<<std::endl;
+            std::cout<<"jet Eta raw = "<<jet_ak04tpc_eta_raw[0]<<std::endl;
+            std::cout<<"jet Phi = "<<jet_ak04tpc_phi[0]<<std::endl;
+            std::cout<<"jet PTD raw = "<<jet_ak04tpc_ptd_raw[0]<<std::endl;
+            std::cout<<"jet Multp raw = "<<jet_ak04tpc_multiplicity_raw[0]<<std::endl;
+            std::cout<<"\n";
+          }
+        }//print
+
         if (iblock == (block_size-1)) {
 
-          // for (int i = 0; i < block_size; i++){
-          // 	fprintf(stderr,"\n %d: event %i: track pT = %f\n",__LINE__,i,track_data[i*ntrack_max*10 + 0*ntrack_max + 1]); //look at track pT of first track per event
-          // } //check array
-
-          if (event_offset[0] == 0) {
-            //write first event
+          //write first event
+          if (event_offset[0] == 0) 
             event_data_set.write(&event_data[0], H5::PredType::NATIVE_FLOAT);
-          }
 
-          else{ 
-            //set up extension
+          //extend dataset otherwise
+          else { 
             const hsize_t event_dim_extended[Event_RANK] = {
               event_offset[0] + event_dim_extend[0], event_dim_extend[1] };
 
@@ -401,6 +406,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
 
           //put in block logic
           event_offset[0] += block_size;
+
+
+          //---------Event Stuff Done. Moving onto track,clustr, and jets------------//
 
           if (offset[0] == 0) {
             // Writing the first event. The track_data space is already
@@ -436,7 +444,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
 
             // Select the hyperslab that only encompass the
             // difference from extending the data space (i.e. the
-            // new event, but offsetted at the existing event)
+            // new event, but offset at the existing event)
             H5::DataSpace track_file_space = track_data_set.getSpace();
             H5::DataSpace cluster_file_space = cluster_data_set.getSpace();
             H5::DataSpace jet_file_space = jet_data_set.getSpace();
@@ -481,7 +489,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       _tree_event->Delete();
       file->Close();
       delete file;
-    }
+      }
     }
 
     int main(int argc, char *argv[])
@@ -497,14 +505,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       UInt_t njet_max = 0;
       UInt_t block_size = 2000; //affects chunk size, used from pairing
 
-      find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
-
+      /* find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max); */
       /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; 18q_pass3_cluster15*/
-      /* nevent_max = 882814; ntrack_max = 4499; ncluster_max = 468; njet_max = 52; //18q_mb*/
-      /* nevent_max =10000; */
-      /* ntrack_max = 4499; */
-      /* ncluster_max = 468; */
-      /* njet_max = 52; */
+      nevent_max = 882814; ntrack_max = 4499; ncluster_max = 468; njet_max = 52; //18q_mb
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
 
