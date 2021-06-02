@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   }
 
   //------------------------------------- ROOT ------------------------------------
-  
+
   Double_t primary_vertex[3];
   Float_t multiplicity_v0[64];
   Float_t event_plane_angle[3];
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
 
   //------------------------------------- HISTOGRAMS ------------------------------------
-TFile* fout = new TFile("event_distances.root","RECREATE");
+  TFile* fout = new TFile("event_distances.root","RECREATE");
   TH1D* z_vertices_root = new TH1D("Primary_Vertex_root", "Z-vertex (ROOT)", 240, -12, 12);
   TH1D* z_vertices_hdf5 = new TH1D("Primary_Vertex_hdf5", "Z-vertex (hdf5)", 240, -12, 12);
   TH1D* delta_z_vertices = new TH1D("Delta_Primary_Vertex", "#Delta V_z Distribution", 240, -12, 12);
@@ -151,40 +151,36 @@ TFile* fout = new TFile("event_distances.root","RECREATE");
   nEvents = 1000;
   for (Long64_t imix = mix_start; imix < mix_end; imix++){
     for(Long64_t ievent = 0; ievent < nEvents ; ievent++){
-    _tree_event->GetEntry(ievent);
+      _tree_event->GetEntry(ievent);
 
-    fprintf(stderr, "\r%s:%d: %llu / %llu", __FILE__, __LINE__, ievent, nEvents);
-
-      std::cout<<std::endl<<"Event Centrality = "<<centrality<<std::endl;
+      fprintf(stderr, "\r%s:%d: %llu / %llu", __FILE__, __LINE__, ievent, nEvents);
 
       size_t mix_event = mix_events[imix];
-      fprintf(stderr,"\n %s:%d: Mixed event = %lu\n",__FILE__,__LINE__,mix_event);
+
+      /* std::cout<<std::endl<<"Event Centrality = "<<centrality<<std::endl; */
+      /* fprintf(stderr,"\n %s:%d: Mixed event = %lu\n",__FILE__,__LINE__,mix_event); */
 
       if(mix_event < 0 ) continue; //Unpaired events have mix=-999
       event_offset[0]=mix_event;
-      /* fprintf(stderr,"\n %s:%d: Mixed event = %lu\n",__FILE__,__LINE__,event_offset[0]); */
       event_dataspace.selectHyperslab( H5S_SELECT_SET, event_count, event_offset );
-      /* event_memspace.selectHyperslab( H5S_SELECT_SET, event_count_out, event_offset_out ); */
       event_dataset.read( event_data_out, PredType::NATIVE_FLOAT, event_memspace, event_dataspace );
 
       z_vertices_hdf5->Fill(event_data_out[0][0]);
       z_vertices_root->Fill(primary_vertex[2]);
       delta_z_vertices->Fill(TMath::Abs(event_data_out[0][0]-primary_vertex[2]));
-      
+
       flow_hdf5->Fill(event_data_out[0][2]);
       flow_root->Fill(event_plane_angle[1]);
       delta_flow->Fill(TMath::Abs(event_data_out[0][2] - event_plane_angle[1]));
-      
+
       if (centrality){
         centrality_hdf5->Fill(event_data_out[0][3]);
         centrality_root->Fill(centrality);
         delta_centrality->Fill(TMath::Abs(event_data_out[0][3] - centrality));
       }
-      
-      /* std::cout<<std::endl<<"Event Centrality = "<<event_data_out[0][3]<<std::endl; */
     }
   }//End loop over events
-  
+
   file->Close();
 
 
@@ -203,4 +199,4 @@ TFile* fout = new TFile("event_distances.root","RECREATE");
   fout->Close();
   std::cout << " ending " << std::endl;
   return EXIT_SUCCESS;
-  }
+}
