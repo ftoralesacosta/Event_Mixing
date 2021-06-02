@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   std::cout<<rawname<<std::endl;
   TFile *newfile = new TFile(Form("%s_paired.root", rawname.data()), "RECREATE");
   TTree *newtree = _tree_event->CloneTree(0);
-
+  newtree->SetMaxTreeSize(1000000000000LL); //1TB max
   //new branch: mixed_events
   Long64_t mixed_events[300];
   newtree->Branch("mixed_events", mixed_events, "mixed_events[300]/L"); // One more entry needed for this to work
