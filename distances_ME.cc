@@ -148,17 +148,14 @@ int main(int argc, char *argv[])
   //through 300x sequentially. hdf5-hdf5 would be the fastest for parallel.
 
   UInt_t nEvents = _tree_event->GetEntries();
-  nEvents = 1000;
+  nEvents = 100000;
   for (Long64_t imix = mix_start; imix < mix_end; imix++){
     for(Long64_t ievent = 0; ievent < nEvents ; ievent++){
       _tree_event->GetEntry(ievent);
 
-      fprintf(stderr, "\r%s:%d: %llu / %llu", __FILE__, __LINE__, ievent, nEvents);
+      fprintf(stderr, "\r%s:%d: mixed event %llu / %llu : Entry %llu / %llu", __FILE__, __LINE__, imix, mix_end,ievent, nEvents);
 
       size_t mix_event = mix_events[imix];
-
-      /* std::cout<<std::endl<<"Event Centrality = "<<centrality<<std::endl; */
-      /* fprintf(stderr,"\n %s:%d: Mixed event = %lu\n",__FILE__,__LINE__,mix_event); */
 
       if(mix_event < 0 ) continue; //Unpaired events have mix=-999
       event_offset[0]=mix_event;
