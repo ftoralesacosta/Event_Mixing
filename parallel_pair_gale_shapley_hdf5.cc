@@ -14,121 +14,119 @@
 #include <omp.h>
 #include <H5Cpp.h>
 
-//#define HI_TREE "hiEvtAnalyzer/HiTree"
 #define HI_TREE "_tree_event"
 #define HI_TREE_2 "AliAnalysisTaskNTGJ/_tree_event"
 //using namespace std;
 namespace {
 
-	typedef unsigned short index_t;
+  typedef unsigned short index_t;
 
-	size_t nevent(const char *filename)
-	{
+  size_t nevent(const char *filename)
+  {
 
-		TFile *root_file = TFile::Open(filename);
+    TFile *root_file = TFile::Open(filename);
 
-		if (root_file == NULL) {
-		  fprintf(stderr, "%s:%d: ROOT FILE FAIL\n",__FILE__, __LINE__);
-			return 0;
-		}
+    if (root_file == NULL) {
+      fprintf(stderr, "%s:%d: ROOT FILE FAIL\n",__FILE__, __LINE__);
+      return 0;
+    }
 
-		TTree *hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE));
+    TTree *hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE));
 
-		if (hi_tree == NULL) {
-		  hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE_2));		
-		  if(hi_tree == NULL){
-		    fprintf(stderr, "%s:%d: TREE FAIL\n",__FILE__, __LINE__);
-		    return 0;
-		  }
-		}
+    if (hi_tree == NULL) {
+      hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE_2));		
+      if(hi_tree == NULL){
+        fprintf(stderr, "%s:%d: TREE FAIL\n",__FILE__, __LINE__);
+        return 0;
+      }
+    }
 
-		const size_t ret = hi_tree->GetEntries();
+    const size_t ret = hi_tree->GetEntries();
 
-		root_file->Close();
+    root_file->Close();
 
-		return ret;
-	}
+    return ret;
+  }
 
-	std::vector<float> feature_extract(const char *filename,
-					   const size_t event_start,
-					   const size_t event_end,
-					   const size_t nfeature)
-	{
-		TFile *root_file = TFile::Open(filename);
+  std::vector<float> feature_extract(const char *filename,
+      const size_t event_start,
+      const size_t event_end,
+      const size_t nfeature)
+  {
+    TFile *root_file = TFile::Open(filename);
 
-		if (root_file == NULL) {
-		  fprintf(stderr, "%s:%d: ROOT FILE FAIL\n",__FILE__, __LINE__);
-			return std::vector<float>();
-		}
+    if (root_file == NULL) {
+      fprintf(stderr, "%s:%d: ROOT FILE FAIL\n",__FILE__, __LINE__);
+      return std::vector<float>();
+    }
 
-		TTree *hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE));
+    TTree *hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE));
 
-		if (hi_tree == NULL) {
-		  hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE_2));
-		  if(hi_tree == NULL){
-		    fprintf(stderr, "%s:%d: TREE FAIL\n",__FILE__, __LINE__);
-		    return std::vector<float>();
-		  }
-		}
+    if (hi_tree == NULL) {
+      hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE_2));
+      if(hi_tree == NULL){
+        fprintf(stderr, "%s:%d: TREE FAIL\n",__FILE__, __LINE__);
+        return std::vector<float>();
+      }
+    }
 
-		double vertex[3];
+    double vertex[3];
 
-		hi_tree->SetBranchAddress("primary_vertex", vertex);
+    hi_tree->SetBranchAddress("primary_vertex", vertex);
 
-		float multiplicity_v0[64];
-		float event_plane_angle[3];//v1,v2,v3 flow coefficients
+    float multiplicity_v0[64];
+    float event_plane_angle[3];//v1,v2,v3 flow coefficients
 
-		switch (nfeature) {
-		case 2:
-			hi_tree->SetBranchAddress("multiplicity_v0", &multiplicity_v0);
-			break;
-		case 3:
-		        hi_tree->SetBranchAddress("multiplicity_v0", &multiplicity_v0);
-		        hi_tree->SetBranchAddress("event_plane_psi_v0", &event_plane_angle[0]);
-			break;
+    switch (nfeature) {
+      case 2:
+        hi_tree->SetBranchAddress("multiplicity_v0", &multiplicity_v0);
+        break;
+      case 3:
+        hi_tree->SetBranchAddress("multiplicity_v0", &multiplicity_v0);
+        hi_tree->SetBranchAddress("event_plane_psi_v0", &event_plane_angle[0]);
+        break;
 
-		default:
-			fprintf(stderr, "%s:%d: illegal nfeature = %lu\n",
-					__FILE__, __LINE__, nfeature);
-			return std::vector<float>();
-		}
+      default:
+        fprintf(stderr, "%s:%d: illegal nfeature = %lu\n",
+            __FILE__, __LINE__, nfeature);
+        return std::vector<float>();
+    }
 
-		std::vector<float> ret;
+    std::vector<float> ret;
 
-		for (size_t i = event_start; i < event_end; i++) {
-			hi_tree->GetEntry(i);
+    for (size_t i = event_start; i < event_end; i++) {
+      hi_tree->GetEntry(i);
 
-			ret.push_back(vertex[2]);
+      ret.push_back(vertex[2]);
 
-			if (nfeature >= 2) {
- 			        float multp_sum = 0;
-			        for (int k = 0; k < 64; k++) {
-				  multp_sum += multiplicity_v0[k];
-				  /* multp_sum += (multiplicity_v0[k]/100); */
-				}
-				ret.push_back(multp_sum);
+      if (nfeature >= 2) {
+        float multp_sum = 0;
+        for (int k = 0; k < 64; k++) {
+          multp_sum += multiplicity_v0[k];
+          /* multp_sum += (multiplicity_v0[k]/100); */
+        }
+        ret.push_back(multp_sum);
 
-				if (nfeature >= 3)
-				  ret.push_back(event_plane_angle[1]);
+        if (nfeature >= 3)
+          ret.push_back(event_plane_angle[1]);
         if (i > event_start - 3)
-        fprintf(stderr,"%s: %d: z-vertex = %1.2f mp = %f, v2 = %1.2f\n",__func__,__LINE__,vertex[2],multp_sum,event_plane_angle[1]);
-			}
+          fprintf(stderr,"%s: %d: z-vertex = %1.2f mp = %f, v2 = %1.2f\n",__func__,__LINE__,vertex[2],multp_sum,event_plane_angle[1]);
+      }
 
-		}
-//    for (int i = 0; i < ret.size();i+=3){
- //       fprintf(stderr,"%d: size =  %i, z-vertex = %1.2f mp = %f, v2 = %1.2f\n",
-  //          __LINE__,ret.size(),ret[i+0],ret[i+1],ret[i+2]);
-    //}
-		root_file->Close();
-		return ret;
-	}
+    }
+    /* for (int i = 0; i < ret.size();i+=3){ */
+    /*   fprintf(stderr,"%d: size =  %i, z-vertex = %1.2f mp = %f, v2 = %1.2f\n", */
+    /*       __LINE__,ret.size(),ret[i+0],ret[i+1],ret[i+2]); */
+    /* } */
+    root_file->Close();
+    return ret;
+  }
 
 
   size_t nevent_hdf5(const char *filename)
   {
 
     std::string file_str = filename;
-
     const H5std_string hdf5_file_name(file_str.c_str());
     H5::H5File h5_file( file_str.c_str(), H5F_ACC_RDONLY );
 
@@ -148,80 +146,81 @@ namespace {
   }
 
   std::vector<float> feature_extract_hdf5(const char *filename,
-					   const size_t event_start,
-					   const size_t event_end,
-					   const size_t nfeature)
-	{
+      const size_t event_start,
+      const size_t event_end,
+      const size_t nfeature)
+  {
 
-	  //HAVE THE BLOCK SIZE BE EVENT_END-EVENT_START, AND PUT OFFSET AS EVEST_START
-	  /* fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, "Befor HDF5 READ"); */
-	  std::string file_str = filename;
+    //HAVE THE BLOCK SIZE BE EVENT_END-EVENT_START, AND PUT OFFSET AS EVEST_START
+    /* fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, "Befor HDF5 READ"); */
+    std::string file_str = filename;
 
     const int EVENT_RANK = 2; // Rank 2 because [No. Events, Event Variables]
-	  
-		const H5std_string hdf5_file_name(file_str.c_str());
-		H5::H5File h5_file( file_str.c_str(), H5F_ACC_RDONLY );
 
-		const std::string event_ds_name( "event" );
-		H5::DataSet event_dataset = h5_file.openDataSet( event_ds_name.c_str() );
-		H5::DataSpace event_dataspace = event_dataset.getSpace();
+    const H5std_string hdf5_file_name(file_str.c_str());
+    H5::H5File h5_file( file_str.c_str(), H5F_ACC_RDONLY );
 
-		//Initialize Event Dimensions
-		const int event_ndims = event_dataspace.getSimpleExtentNdims();
-		hsize_t event_maxdims[event_ndims];
-		hsize_t eventdims[event_ndims];
-		event_dataspace.getSimpleExtentDims(eventdims, event_maxdims);
+    const std::string event_ds_name( "event" );
+    H5::DataSet event_dataset = h5_file.openDataSet( event_ds_name.c_str() );
+    H5::DataSpace event_dataspace = event_dataset.getSpace();
 
-		UInt_t NEvent_Vars = eventdims[1]; //# event properties
-		//Define array hyperslab will be read into 
+    //Initialize Event Dimensions
+    const int event_ndims = event_dataspace.getSimpleExtentNdims();
+    hsize_t event_maxdims[event_ndims];
+    hsize_t eventdims[event_ndims];
+    event_dataspace.getSimpleExtentDims(eventdims, event_maxdims);
 
-		const hsize_t block_size = event_end-event_start;
-		float event_data_out[block_size][NEvent_Vars] = {0};
-		/* fprintf(stderr,"%s:%d: HDF5 Block Size = %i, Event Start = %i, NVars = %i\n", */
-		/* 	__FILE__,__LINE__,block_size,event_start,NEvent_Vars); */
+    UInt_t NEvent_Vars = eventdims[1]; //# event properties
+    //Define array hyperslab will be read into 
 
-		hsize_t event_offset[EVENT_RANK] = {event_start,0};
-		hsize_t event_count[EVENT_RANK] = {block_size, NEvent_Vars};
-		//const int Event_RANK_OUT = 2; //Event #, Event properties
-		H5::DataSpace event_memspace( EVENT_RANK, eventdims );
-		hsize_t event_offset_out[EVENT_RANK] = {0,0};
-		hsize_t event_count_out[EVENT_RANK] = {block_size, NEvent_Vars};
+    const hsize_t block_size = event_end-event_start;
+    float event_data_out[block_size][NEvent_Vars] = {0};
+    /* fprintf(stderr,"%s:%d: HDF5 Block Size = %i, Event Start = %i, NVars = %i\n", */
+    /* 	__FILE__,__LINE__,block_size,event_start,NEvent_Vars); */
 
-		event_dataspace.selectHyperslab( H5S_SELECT_SET, event_count, event_offset );
-		event_memspace.selectHyperslab( H5S_SELECT_SET, event_count_out, event_offset_out );
-		event_dataset.read( event_data_out, H5::PredType::NATIVE_FLOAT, event_memspace, event_dataspace);
-		/* fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, "event dataset read into array: OK"); */
+    hsize_t event_offset[EVENT_RANK] = {event_start,0};
+    hsize_t event_count[EVENT_RANK] = {block_size, NEvent_Vars};
+    //const int Event_RANK_OUT = 2; //Event #, Event properties
+    H5::DataSpace event_memspace( EVENT_RANK, eventdims );
+    hsize_t event_offset_out[EVENT_RANK] = {0,0};
+    hsize_t event_count_out[EVENT_RANK] = {block_size, NEvent_Vars};
 
-		std::vector<float> ret;
+    event_dataspace.selectHyperslab( H5S_SELECT_SET, event_count, event_offset );
+    event_memspace.selectHyperslab( H5S_SELECT_SET, event_count_out, event_offset_out );
+    event_dataset.read( event_data_out, H5::PredType::NATIVE_FLOAT, event_memspace, event_dataspace);
+    /* fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, "event dataset read into array: OK"); */
 
-		for (size_t i = 0; i < block_size; i++) {
-		  float z_vtx = event_data_out[i][0];
-		  ret.push_back(z_vtx);
-		  if (nfeature >= 2) {
-		    float multp = event_data_out[i][1];
-		    /* ret.push_back(multp); */
-		    ret.push_back(multp/100.);
-		    if (nfeature >=3){
+    std::vector<float> ret;
+
+    for (size_t i = 0; i < block_size; i++) {
+      float z_vtx = event_data_out[i][0];
+      ret.push_back(z_vtx);
+      if (nfeature >= 2) {
+        /* float multp = event_data_out[i][1]; */
+        float multp = event_data_out[i][3]; //FIXME: this is CENTRALITY. Commented out above is multiplicity.
+        ret.push_back(multp);
+        /* ret.push_back(multp/10000.); */
+        if (nfeature >=3){
           float v2 = event_data_out[i][2];
           ret.push_back(v2);//index 2 is v1, 3 is v2, 4 is v3
           if (std::isnan(v2)||v2==0)
             fprintf(stderr,"%s: %d: NAN or 0 v2; i = %zu, z-vertex = %1.2f mp = %f, v2 = %1.2f\n",__func__,__LINE__,i,z_vtx,multp,v2);
           if (i==0)
             fprintf(stderr,"%s: %d: z-vertex = %1.2f mp = %f, v2 = %1.2f\n",__func__,__LINE__,z_vtx,multp,v2);
-          }
-		  }
-		}
+        }
+      }
+    }
 
     for (int i = 0; i < ret.size();i+=3){
       if (i < ret.size() - 3) continue;
       fprintf(stderr,"%d: size =  %i, z-vertex = %1.2f mp = %f, v2 = %1.2f\n",
           __LINE__,ret.size(),ret[i+0],ret[i+1],ret[i+2]);
     }
-		return ret;
-	}
-  
-	void feature_normalize(std::vector<float> &u,
-			       std::vector<float> &v, const size_t n)
+    return ret;
+  }
+
+  void feature_normalize(std::vector<float> &u,
+      std::vector<float> &v, const size_t n)
   {
     //normalize vectors such that event properties with very different magnitudes can be equally weighted in pairing
     //ex: multiplicity can range from 0-1,000. But z-vertex only ranges from 0-10. Normalization is needed to pair
@@ -248,33 +247,33 @@ namespace {
 
       for (size_t i = 0; i < v.size(); i += n) {
         s_j += fabsf(v[i + j]);
-        if (j==0 && i/3>1997){
-          fprintf(stderr,"%s: %d: i = %i, z = %f, mp = %f, v2 = %f \n",__func__,__LINE__,i/3,v[i+0],v[i+1],v[i+2]);
-          fprintf(stderr,"%s: %d: v[i + j] = %f\n",__func__,__LINE__,v[i + j]);
-        }
-      }
-      s[j] += s_j;
+        /* if (j==0 && i/3>1997) */
+        /*   fprintf(stderr,"%s: %d: i = %i, z = %f, mp = %f, v2 = %f \n",__func__,__LINE__,i/3,v[i+0],v[i+1],v[i+2]); */
+        /* fprintf(stderr,"%s: %d: v[i + j] = %f\n",__func__,__LINE__,v[i + j]); */
+        /* } */
     }
-
-    //get normalization factor: N_Events/property_sum
-    for (size_t j = 0; j < n; j++) {
-      s[j] = (u.size() + v.size()) / s[j];
-    }
-
-    //apply normalization to each vector. you want the same normalization applied to each dataset.
-    for (size_t i = 0; i < u.size(); i += n) {
-      for (size_t j = 0; j < n; j++) {
-        u[i + j] *= s[j];
-      }
-    }
-
-    for (size_t i = 0; i < v.size(); i += n) {
-      for (size_t j = 0; j < n; j++) {
-        v[i + j] *= s[j];
-      }
-    }
-
+    s[j] += s_j;
   }
+
+  //get normalization factor: N_Events/property_sum
+  for (size_t j = 0; j < n; j++) {
+    s[j] = (u.size() + v.size()) / s[j];
+  }
+
+  //apply normalization to each vector. you want the same normalization applied to each dataset.
+  for (size_t i = 0; i < u.size(); i += n) {
+    for (size_t j = 0; j < n; j++) {
+      u[i + j] *= s[j];
+    }
+  }
+
+  for (size_t i = 0; i < v.size(); i += n) {
+    for (size_t j = 0; j < n; j++) {
+      v[i + j] *= s[j];
+    }
+  }
+
+}
 }
 
 bool preference_compare(const std::pair<float, index_t> u,
@@ -302,12 +301,12 @@ void order_preference(std::vector<std::list<index_t> > &up,
   for (size_t i = 0; i < u_size_n; i++) {
     std::vector<std::pair<float, index_t> > l;
     /* if (i==0) */
-      /* fprintf(stderr,"%s: %d:[i] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,u[i*n+0],u[i*n+1],u[i*n+2]); */
+    /* fprintf(stderr,"%s: %d:[i] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,u[i*n+0],u[i*n+1],u[i*n+2]); */
     for (size_t j = 0; j < v_size_n; j++) {
       float d = 0;
 
       /* if (j==0 && i==0) */
-        /* fprintf(stderr,"%s: %d:[j] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,v[i*n+0],v[i*n+1],v[i*n+2]); */
+      /* fprintf(stderr,"%s: %d:[j] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,v[i*n+0],v[i*n+1],v[i*n+2]); */
 
       for (size_t k = 0; k < n; k++)//loop through featurs for distance metric d
         d += std::pow(u[i * n + k] - v[j * n + k], 2);
@@ -483,7 +482,7 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
     //at the end of the root file without pairings.
   }
 
-  /* const size_t nblocks_0 = 2; */
+  /* const size_t nblocks_0 = 1; */
   const size_t nblocks_0 = nevent_0 / block_size;
   std::vector<std::vector<float> >feature_0_vec;
 
@@ -655,22 +654,32 @@ void write_root(std::map<size_t,std::vector<Long64_t> > Matches,
   fprintf(stderr,"\n%d: Paring Done, writing to ROOT file \n",__LINE__);
   int Track_Skim = atoi(GeV_Track_Skim);
 
-  TFile *root_file = new TFile(filename_0,"update");
-  TTree *hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE));
-  if (hi_tree == NULL) {
-    hi_tree = dynamic_cast<TTree *>(root_file->Get(HI_TREE_2));		
-    if(hi_tree == NULL){
-      fprintf(stderr, "%s:%d: TREE FAIL\n",__FILE__, __LINE__);
-      return;
-    }
-  }
-
   size_t lastindex = std::string(filename_0).find_last_of("."); 
   std::string rawname = std::string(filename_0).substr(0, lastindex);
+  std::string paired_name = rawname+std::string("_paired.root");
+
+  fprintf(stderr,"\n%s: ROOT I/O done, opening new ROOT file \n",rawname);
+
+  TFile *file = new TFile(paired_name.data(),"update");
+  fprintf(stderr,"\n%d: ROOT I/O done, opening new ROOT file \n",__LINE__);
+  TTree *hi_tree= NULL;
+  hi_tree= dynamic_cast<TTree *> (dynamic_cast<TDirectoryFile *>  (file->Get("AliAnalysisTaskNTGJ"))->Get("_tree_event"));
+  fprintf(stderr,"\n%d: ROOT I/O done, opening new ROOT file \n",__LINE__);
+  if (hi_tree== NULL) {
+    std::cout << "Failed to grab tree, perhaps AliAnalysisTaskNTGJ does not exist, trying again" << std::endl;
+    hi_tree= dynamic_cast<TTree *> (file->Get("_tree_event"));
+    if (hi_tree== NULL) {
+      std::cout << " fail " << std::endl;
+      exit(EXIT_FAILURE);
+    }   
+  }
+
+  fprintf(stderr,"\n%d: ROOT I/O done, opening new ROOT file \n",__LINE__);
 
   TFile *newfile = new TFile(Form("%s_%luGeVTrack_paired_hdf5.root",rawname.data(),Track_Skim),"recreate");
   /* fprintf(stderr,"%d: Right Before Clone\n",__LINE__); */
   TTree *newtree = hi_tree->CloneTree(0);
+  newtree->SetMaxTreeSize(1000000000000LL); //1000GB tree limit. *sigh*
 
   ULong64_t nentries = hi_tree->GetEntries();    
   unsigned int n_mix = Matches[0].size();
@@ -722,30 +731,125 @@ void write_root(std::map<size_t,std::vector<Long64_t> > Matches,
   fprintf(stderr,"%d: Right Before Write\n",__LINE__);
   newtree->Write();
 
-  delete root_file;
+  delete file;
   delete newfile;
 
   gSystem->Exit(0);
 }
 
+void write_hdf5(std::map<size_t,std::vector<Long64_t> > Matches,
+    UInt_t block_size, const char *filename_0, 
+    unsigned int n_mix, const char *GeV_Track_Skim)
+{
+  std::string file_str = filename_0;
+  const H5std_string hdf5_file_name(file_str.c_str());
+  H5::H5File h5_file( file_str.c_str(), H5F_ACC_RDWR);
+  H5::DSetCreatPropList mixing_property = H5::DSetCreatPropList();
+
+  const int RANK = 2;
+  size_t mixing_row_size = n_mix; //N Mixed Events
+  hsize_t mixing_dim_extend[RANK] = {block_size, mixing_row_size };
+  hsize_t mixing_dim_max[RANK] = { H5S_UNLIMITED, mixing_row_size };
+  H5::DataSpace mixing_data_space(RANK, mixing_dim_extend, mixing_dim_max);
+
+  //-------------------------- Compress DataSet if Possible --------------------------
+#ifdef HDF5_USE_DEFLATE
+  if (!H5Zfilter_avail(H5Z_FILTER_DEFLATE)) {
+    fprintf(stderr, "%s:%d: warning: deflate filter not "
+        "available\n", __FILE__, __LINE__);
+  }
+
+  else {
+    unsigned int filter_info;
+
+    H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filter_info);
+    if (!(filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
+      fprintf(stderr, "%s:%d: warning: deflate filter not "
+          "available for encoding\n", __FILE__, __LINE__);
+    }
+    else {
+      mixing_property.setDeflate(1);
+    }
+  }
+#endif // HDF5_USE_DEFLATE
+
+  hsize_t mixing_dim_chunk[RANK] = {
+    mixing_dim_extend[0],
+    mixing_dim_extend[1],
+  };
+
+  mixing_property.setChunk(RANK, mixing_dim_chunk);
+
+  H5::DataSet mixing_data_set = h5_file.createDataSet("mixing",
+      H5::PredType::NATIVE_FLOAT, mixing_data_space, mixing_property);
+  fprintf(stderr,"%s:%d: CREATED EVENT DATASET",__FILE__,__LINE__);
+
+  hsize_t offset[RANK] = {0, 0};
+
+  //vector to temporarily hold mixed events
+  std::vector<float> mixing_data(block_size * mixing_row_size, NAN);
+
+  for (size_t t=0; t<Matches.size();t++){ //event loop
+
+    int iblock = t% block_size;
+
+    for (size_t s=0; s<Matches[t].size();s++){ //mix loop
+
+      //Grab the Mix Event
+      mixing_data[iblock * mixing_row_size + s] = Matches[t][s];
+      fprintf(stderr,"%d: index = %i \n",__LINE__,iblock * mixing_row_size + s);
+      //The rest deals with writing hdf5, 1 chunk at a time (blocksize)
+    }//n_mix
+    if (iblock == (block_size-1)) {
+      if (offset[0] == 0)
+        mixing_data_set.write(&mixing_data[0], H5::PredType::NATIVE_FLOAT);
+
+      //extend dataset otherwise
+      else {
+        const hsize_t mixing_dim_extended[RANK] = {
+          offset[0] + mixing_dim_extend[0], mixing_dim_extend[1] };
+
+        //Extend to new Dimension
+        mixing_data_set.extend(mixing_dim_extended);
+        H5::DataSpace mixing_file_space = mixing_data_set.getSpace();
+
+        mixing_file_space.selectHyperslab(
+            H5S_SELECT_SET, mixing_dim_extend, offset);
+
+        H5::DataSpace mixing_memory_space(RANK, mixing_dim_extend, NULL);
+        mixing_data_set.write(&mixing_data[0], H5::PredType::NATIVE_FLOAT,
+            mixing_memory_space, mixing_file_space);
+      }
+
+      offset[0] += block_size;
+    }//block check
+
+  }//events
+}//function
+
 int main(int argc, char *argv[])
 {
   if (argc < 6) {
-    fprintf(stderr,"%s\n","Argument Syntax is [Command] [File] [File] [mix start] [mix end] [GeV Track Skim]");
+    fprintf(stderr,"%s\n","Argument Syntax is [Command] [Triggerd H5 File] [Min-Bias H5 File] [mix start] [mix end] [GeV Track Skim]");
     return EXIT_FAILURE;
   }
 
-  const char *root_file = argv[1];
-  const char *hdf5_file = argv[2];
+  const char *trigger_file = argv[1];
+  const char *MB_file = argv[2];
   const char *mix_start = argv[3];
   const char *mix_end   = argv[4];
   const char *track_skim= argv[5];
   int n_event_properties = 3; //z-vertex, multiplicity, v2 (flow)
   int n_duplicate = 1;
 
-  std::map<size_t,std::vector<Long64_t> > Matches = mix_gale_shapley(root_file, hdf5_file,
+  std::map<size_t,std::vector<Long64_t> > Matches = mix_gale_shapley(trigger_file, MB_file,
       mix_start, mix_end, track_skim, n_event_properties, n_duplicate);
 
-  write_txt(Matches,root_file,mix_start,mix_end,track_skim);
+  unsigned int n_mix = atoi(mix_end)-atoi(mix_start);
+  unsigned int block_size = 2000;
+
+  write_txt(Matches,trigger_file,mix_start,mix_end,track_skim);
+  write_hdf5(Matches,block_size,trigger_file,n_mix,track_skim);
+
   /* write_root(Matches,root_file,track_skim,mix_end-mix_start); */
 }
