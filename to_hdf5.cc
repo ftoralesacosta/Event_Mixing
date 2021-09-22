@@ -103,13 +103,18 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         }
       }
 
+      //Events
       UInt_t nevent;
+      Float_t centrality;
+      Float_t ue_estimate_its_const;
+      Float_t ue_estimate_tpc_const;
+      Bool_t is_pileup_from_spd_5_08;
       std::vector<Double_t> primary_vertex(3, NAN);
       std::vector<Float_t> multiplicity_v0(64, NAN);//64 channels for v0 detector, to be summed
       std::vector<Float_t> event_plane_angle(3,NAN); //directed/eliptic/triangular
-      Float_t centrality;
-      /* Long64_t mix_events[300]; */
 
+
+      //Tracks
       UInt_t ntrack;
       std::vector<Float_t> track_e(ntrack_max, NAN);
       std::vector<Float_t> track_pt(ntrack_max, NAN);
@@ -123,21 +128,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<Float_t> track_dca_xy(ntrack_max, NAN);
       std::vector<Float_t> track_dca_z(ntrack_max, NAN);
 
-      /* UInt_t ncluster; */
-      /* std::vector<Float_t> cluster_e(ncluster_max, NAN); */
-      /* std::vector<Float_t> cluster_pt(ncluster_max, NAN); */
-      /* std::vector<Float_t> cluster_eta(ncluster_max, NAN); */
-      /* std::vector<Float_t> cluster_phi(ncluster_max, NAN); */
-      /* std::vector<Float_t> cluster_e_cross(ncluster_max, NAN); */
-      /* Float_t cluster_lambda_square[ncluster_max][2]; */
-      /* //This is a similar workaround to convert_sample.cc line 241. i.e. NCLUSTER_MAX */
-
-      /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 0] = cluster_e[n]; */
-      /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 1] = cluster_pt[n]; */
-      /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 2] = cluster_eta[n]; */
-      /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 3] = cluster_phi[n]; */
-      /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 4] = cluster_lambda_square[n][0]; //sigma_0^2 */
-
+      //Clusters
       UInt_t ncluster;
       Float_t cluster_e[NTRACK_MAX];
       Float_t cluster_pt[NTRACK_MAX];
@@ -170,6 +161,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       Float_t cluster_iso_tpc_04_ue[NTRACK_MAX];
 
 
+      //Jets
       UInt_t njet_ak04tpc;
       std::vector<Float_t> jet_ak04tpc_pt_raw(njet_max, NAN);
       std::vector<Float_t> jet_ak04tpc_eta_raw(njet_max, NAN);
@@ -182,6 +174,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       _tree_event->SetBranchAddress("multiplicity_v0", &multiplicity_v0[0]);
       _tree_event->SetBranchAddress("event_plane_psi_v0", &event_plane_angle[0]);
       _tree_event->SetBranchAddress("centrality_v0m", &centrality);
+      _tree_event->SetBranchAddress("is_pileup_from_spd_5_08", &is_pileup_from_spd_5_08);
+      _tree_event->SetBranchAddress("ue_estimate_its_const", &ue_estimate_its_const);
+      _tree_event->SetBranchAddress("ue_estimate_tpc_const", &ue_estimate_tpc_const);
       /* _tree_event->SetBranchAddress("mixed_events",mix_events); */
 
       _tree_event->SetBranchAddress("ntrack", &ntrack);
@@ -247,7 +242,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       // _tree_event->SetBranchAddress("jet_ak04tpc_width_sigma", &jet_ak04tpc_width_sigma[0]);
 
       //Changes here should be also be done on line 528
-      static const size_t event_row_size = 4;
+      static const size_t event_row_size = 7;
       static const size_t track_row_size = 10;
       static const size_t cluster_row_size = 31;
       static const size_t jet_row_size = 5;
@@ -264,6 +259,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         _tree_event->GetEntry(i);
 
         int iblock = i % block_size;
+        //writing to file is done every [block_size] number of events
+        //this variable keeps track of the current increment within a block
+        //, as opposed to [i] which is looping through all events
+
         //fprintf(stderr,"\n %d: iblock = %i \n",__LINE__,iblock);
 
         float multiplicity_sum = 0;
@@ -272,7 +271,11 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         event_data[iblock*event_row_size + 1] = multiplicity_sum;
         event_data[iblock*event_row_size + 2] = event_plane_angle[1]; //elliptic flow
         event_data[iblock*event_row_size + 3] = centrality;
-        //event_data[iblock*nEventVariables + 2] = event_plane_angle[0]; //directed flow
+        event_data[iblock*event_row_size + 4] = is_pileup_from_spd_5_08;
+        event_data[iblock*event_row_size + 5] = ue_estimate_its_const;
+        event_data[iblock*event_row_size + 6] = ue_estimate_tpc_const;
+
+        //event_data[iblock*nEventVariables + N] = event_plane_angle[0]; //directed flow
 
         for (Long64_t j = 0; j < ntrack; j++) {
           track_data[(iblock*ntrack_max + j)*track_row_size + 0] = track_e[j];
@@ -322,11 +325,6 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 29] = cluster_lambda_square[n][1];
           cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 30] = cluster_s_nphoton[n][1];
 
-          /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 0] = cluster_e[n]; */
-          /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 1] = cluster_pt[n]; */
-          /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 2] = cluster_eta[n]; */
-          /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 3] = cluster_phi[n]; */
-          /* cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 4] = cluster_lambda_square[n][0]; //sigma_0^2 */
         }
 
         for (Long64_t j = 0; j < njet_ak04tpc; j++) {
@@ -347,6 +345,8 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
             std::cout<<"multilplicity = "<<multiplicity_sum<<"\n";
             std::cout<<"v2 flow = "<<event_plane_angle[1]<<"\n";
             std::cout<<"centrality = "<<centrality<<"\n";
+            std::cout<<"is_pileup_from_spd_5_08 = "<<is_pileup_from_spd_5_08<<"\n";
+            std::cout<<"ue_estimate_its_const = "<<ue_estimate_its_const<<"\n";
             std::cout<<"\n";
 
             std::cout<<"Track Info:\n";
@@ -381,7 +381,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           }
         }//print
 
-        if (iblock == (block_size-1)) {
+        if (iblock == (block_size-1)) {//writes 1 block (2000 events) at a time. Faster/less memory
 
           //write first event
           if (event_offset[0] == 0) 
@@ -500,14 +500,16 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       }
 
       UInt_t nevent_max = 0;
+      /* UInt_t nevent_max = 20000; */
       UInt_t ntrack_max = 0;
       UInt_t ncluster_max = 0;
       UInt_t njet_max = 0;
       UInt_t block_size = 2000; //affects chunk size, used from pairing
 
-      /* find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max); */
-      /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; 18q_pass3_cluster15*/
-      nevent_max = 882814; ntrack_max = 4499; ncluster_max = 468; njet_max = 52; //18q_mb
+      find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
+      /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
+      /* nevents = 20000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; */ //18q_mb
+      /* nevent_max = 20000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
 
@@ -519,7 +521,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
 
       // How many properties per event is written
       //Shoudl be Same as Line 225:
-      static const size_t event_row_size = 4;
+      static const size_t event_row_size = 7;
       static const size_t track_row_size = 10;
       static const size_t cluster_row_size = 31;
       static const size_t jet_row_size = 5;
