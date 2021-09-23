@@ -384,8 +384,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
         if (iblock == (block_size-1)) {//writes 1 block (2000 events) at a time. Faster/less memory
 
           //write first event
-          if (event_offset[0] == 0) 
+          if (event_offset[0] == 0) {
             event_data_set.write(&event_data[0], H5::PredType::NATIVE_FLOAT);
+            std::fill(event_data.begin(),event_data.end(),NAN);
+          }
 
           //extend dataset otherwise
           else { 
@@ -402,6 +404,8 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
             H5::DataSpace event_memory_space(Event_RANK, event_dim_extend, NULL);
             event_data_set.write(&event_data[0], H5::PredType::NATIVE_FLOAT,
                 event_memory_space, event_file_space);
+
+            std::fill(event_data.begin(),event_data.end(),NAN);
           }
 
           //put in block logic
@@ -417,6 +421,11 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
             track_data_set.write(&track_data[0], H5::PredType::NATIVE_FLOAT);
             cluster_data_set.write(&cluster_data[0], H5::PredType::NATIVE_FLOAT);
             jet_data_set.write(&jet_data[0], H5::PredType::NATIVE_FLOAT);
+
+            //Make sure to clear previous arrays
+            std::fill(track_data.begin(),track_data.end(),NAN);
+            std::fill(cluster_data.begin(),cluster_data.end(),NAN);
+            std::fill(jet_data.begin(),jet_data.end(),NAN);
           }
 
 
@@ -474,6 +483,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
             jet_data_set.write(&jet_data[0], H5::PredType::NATIVE_FLOAT,
                 jet_memory_space, jet_file_space);
 
+            std::fill(track_data.begin(),track_data.end(),NAN);
+            std::fill(cluster_data.begin(),cluster_data.end(),NAN);
+            std::fill(jet_data.begin(),jet_data.end(),NAN);
           }
           //put in block log
 
@@ -508,7 +520,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
 
       find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
       /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
-      /* nevents = 20000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; */ //18q_mb
+      /* nevent_max = 20000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
       /* nevent_max = 20000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
