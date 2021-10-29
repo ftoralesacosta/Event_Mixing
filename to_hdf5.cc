@@ -3,6 +3,7 @@
 #include <TTree.h>
 #include <TLorentzVector.h>
 
+#include <emcal.h>
 #include <H5Cpp.h>
 #define NTRACK_MAX (1U << 14) 
 
@@ -21,6 +22,67 @@
 #define RANK 3
 #define Event_RANK 2
 
+// calculate 5x5all shower shape
+float get5x5all(const unsigned int cellMaxId, float cluster_e, float cell_e[17664])
+{
+  unsigned int cells5x5[25];
+  /* cell_5_5(cells5x5, cellMaxId); */
+
+  float wtot = 0.0;
+  float w = 0.0;
+  float x = 0.0;
+  float z = 0.0;
+  float dxx = 0.0;
+  float dzz = 0.0;
+  float dxz = 0.0;
+
+  unsigned int sm_max;
+  unsigned int nphi_max;
+  to_sm_nphi(sm_max, nphi_max, cellMaxId);
+
+  for (int i = 0; i < 25; i++) {
+    unsigned int cellId = cells5x5[i];
+
+    if (cellId < 0 || cellId > 17763) continue;
+    /* if (cell_e[cellId] < 0.1) continue; */
+    if (cell_e[cellId] < 0.1 || TMath::IsNaN(cell_e[cellId])) continue;
+
+    unsigned int sm;
+    unsigned int ieta;
+    unsigned int iphi;
+    to_sm_ieta_iphi(sm, ieta, iphi, cellId);
+
+    if (sm % 2) {
+      ieta = ieta + 48;
+    }
+
+    float w = TMath::Max(0.0, 4.5 + TMath::Log(cell_e[cellId] / cluster_e));
+    dxx = dxx + w * ieta * ieta;
+    x = x + w * ieta;
+    dzz = dzz + w * iphi * iphi;
+    z = z + w * iphi;
+    dxz = dxz + w * ieta * iphi;
+    wtot = wtot + w;
+  }
+
+  if (wtot > 0) {
+    dxx /= wtot ;
+    x   /= wtot ;
+    dxx -= x * x ;
+    dzz /= wtot ;
+    z   /= wtot ;
+    dzz -= z * z ;
+    dxz /= wtot ;
+    dxz -= x * z ;
+  }
+
+  /* std::cout<<w<<std::endl; */
+  /* std::cout<<dxx<<std::endl; */
+  /* std::cout<<dzz<<std::endl; */
+  /* std::cout<<dxz<<std::endl; */
+
+  return 0.5 * (dxx + dzz) + TMath::Sqrt( 0.25 * (dxx - dzz) * (dxx - dzz) + dxz * dxz );
+}
 
 void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nevent_max, UInt_t &ntrack_max, UInt_t &ncluster_max, UInt_t &njet_max)
 { 
@@ -241,10 +303,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       _tree_event->SetBranchAddress("jet_ak04tpc_multiplicity_raw", &jet_ak04tpc_multiplicity_raw[0]);
       // _tree_event->SetBranchAddress("jet_ak04tpc_width_sigma", &jet_ak04tpc_width_sigma[0]);
 
-      //Changes here should be also be done on line 528
+      //Changes here should be also be done on line 596
       static const size_t event_row_size = 7;
       static const size_t track_row_size = 10;
-      static const size_t cluster_row_size = 31;
+      static const size_t cluster_row_size = 32;
       static const size_t jet_row_size = 5;
 
       fprintf(stderr,"\n %d: HDF5 Chunk Cache Size = %u\n",__LINE__,block_size);
@@ -255,7 +317,8 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       std::vector<float> jet_data(block_size * njet_max * jet_row_size, NAN);
 
       for (Long64_t i = 0; i < nevent_max; i++) {
-      /* for (Long64_t i = 0; i <4001; i++) { */
+      /* for (Long64_t i = 0; i <10000; i++) { */
+        /* for (Long64_t i = 0; i <4001; i++) { */
         _tree_event->GetEntry(i);
 
         int iblock = i % block_size;
@@ -325,6 +388,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 29] = cluster_lambda_square[n][1];
           cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 30] = cluster_s_nphoton[n][1];
 
+          float shower_5x5all = get5x5all(cluster_cell_id_max[n], cluster_e[n], cell_e);
+          /* if (shower_5x5all != 0.0) */
+          /*   std::cout<<shower_5x5all<<std::endl; */
+          cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 31] =cluster_lambda_square[n][1];
         }
 
         for (Long64_t j = 0; j < njet_ak04tpc; j++) {
@@ -520,8 +587,8 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
 
       find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
       /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
-      /* nevent_max = 20000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
-      /* nevent_max = 20000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
+      /* nevent_max = 400000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
+      /* nevent_max = 400000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
 
@@ -535,7 +602,7 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       //Shoudl be Same as Line 225:
       static const size_t event_row_size = 7;
       static const size_t track_row_size = 10;
-      static const size_t cluster_row_size = 31;
+      static const size_t cluster_row_size = 32;
       static const size_t jet_row_size = 5;
 
       // The tensor dimension increment for each new chunk of events
