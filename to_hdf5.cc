@@ -26,7 +26,7 @@
 float get5x5all(const unsigned int cellMaxId, float cluster_e, float cell_e[17664])
 {
   unsigned int cells5x5[25];
-  /* cell_5_5(cells5x5, cellMaxId); */
+  cell_5_5(cells5x5, cellMaxId);
 
   float wtot = 0.0;
   float w = 0.0;
@@ -586,9 +586,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       UInt_t block_size = 2000; //affects chunk size, used from pairing
 
       /* find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max); */
-      /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
+      nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15
       /* nevent_max = 908225; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
-      nevent_max = 908000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb
+      /* nevent_max = 908000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
       /* nevent_max = 400000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
