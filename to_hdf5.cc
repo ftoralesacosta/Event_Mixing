@@ -389,9 +389,9 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
           cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 30] = cluster_s_nphoton[n][1];
 
           float shower_5x5all = get5x5all(cluster_cell_id_max[n], cluster_e[n], cell_e);
+          cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 31] = shower_5x5all;
           /* if (shower_5x5all != 0.0) */
           /*   std::cout<<shower_5x5all<<std::endl; */
-          cluster_data[(iblock*ncluster_max + n)*cluster_row_size + 31] =cluster_lambda_square[n][1];
         }
 
         for (Long64_t j = 0; j < njet_ak04tpc; j++) {
@@ -585,9 +585,10 @@ void find_ntrack_ncluster_max(char *argv_first[], char *argv_last[], UInt_t &nev
       UInt_t njet_max = 0;
       UInt_t block_size = 2000; //affects chunk size, used from pairing
 
-      find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max);
+      /* find_ntrack_ncluster_max(argv + 1, argv + argc - 1, nevent_max, ntrack_max, ncluster_max, njet_max); */
       /* nevent_max = 529683; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
-      /* nevent_max = 400000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
+      /* nevent_max = 908225; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb */
+      nevent_max = 908000; ntrack_max = 3176; ncluster_max = 381; njet_max = 50; //18q_mb
       /* nevent_max = 400000; ntrack_max = 3786; ncluster_max = 2022; njet_max = 52; //18q_pass3_cluster15 */
 
       fprintf(stderr, "%sf:%d: nevents = %u, ntrack_max = %u, ncluster_max = %u, njet_max = %u\n", __FILE__, __LINE__, nevent_max, ntrack_max, ncluster_max, njet_max);
