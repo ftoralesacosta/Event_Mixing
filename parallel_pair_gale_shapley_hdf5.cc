@@ -300,23 +300,19 @@ void order_preference(std::vector<std::list<index_t> > &up,
   //Loopt through each event in dataset_0 block
   for (size_t i = 0; i < u_size_n; i++) {
     std::vector<std::pair<float, index_t> > l;
-    /* if (i==0) */
-    /* fprintf(stderr,"%s: %d:[i] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,u[i*n+0],u[i*n+1],u[i*n+2]); */
+
     for (size_t j = 0; j < v_size_n; j++) {
       float d = 0;
 
-      /* if (j==0 && i==0) */
-      /* fprintf(stderr,"%s: %d:[j] z = %f, mp = %f, v2 = %f\n",__func__,__LINE__,v[i*n+0],v[i*n+1],v[i*n+2]); */
-
-      for (size_t k = 0; k < n; k++)//loop through featurs for distance metric d
-        d += std::pow(u[i * n + k] - v[j * n + k], 2);
+      //loop through features (indexed by k) for distance metric d
+      for (size_t k = 0; k < n; k++)
+        d += std::pow(u[i * n + k] - v[j * n + k], 2); //square differences 
       if (d==0) d = 999999; //Avoid pairing identical events
       l.push_back(std::pair<float, size_t>(d, j));
       /* if (i%1000 == 0 || j%1000 == 0); */
       /* fprintf(stderr,"%d: Distance = %f\n",__LINE__,d); */
     }
     std::sort(l.begin(), l.end(), preference_compare);
-    // up.push_back(std::list<index_t>());
     for (size_t j = 0; j < l.size(); j++) {
       for (size_t k = 0; k < nduplicate_v; k++) {
         up[i].push_front(l[j].second + k * v_size_n);
@@ -324,14 +320,11 @@ void order_preference(std::vector<std::list<index_t> > &up,
       }
     }
     up[i].resize(size_max, v_size_n);
-    //if (i % 100 == 0) {
-    //  fprintf(stderr, "%s:%d: %lu/%lu\n", __FILE__, __LINE__,i, u_size_n);
-    //}
   }
 
   vp.resize(v_size_n * nduplicate_v, std::list<index_t>());
 
-  //Loop through each event in dataset_1 block
+  //Loop through each event in dataset_1 block. Logic otherwise the same
   for (size_t j = 0; j < v_size_n; j++) {
     std::vector<std::pair<float, index_t> > l;
 
@@ -357,17 +350,15 @@ void order_preference(std::vector<std::list<index_t> > &up,
       vp[j * nduplicate_v + k] = b;
     }
 
-    //if (j % 100 == 0) {
-    //fprintf(stderr, "%s:%d: %lu/%lu\n", __FILE__, __LINE__,j, v_size_n);}
   }
 
-  /* fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, "Order Preference done for this block"); */
 }
 
+//Heart of the algorithm
 std::vector<index_t> gale_shapley(std::vector<std::list<index_t> > &mp,
     std::vector<std::list<index_t> > &fp)
 {
-  /* pass in male and female preference lists. Create vectors to track */ 
+  /* pass in male and female preference lists as arguments. Create vectors (below) to track */ 
   /* which males are engaged to which females and vice-versa. */
   std::vector<index_t> m_to_f_engaged(mp.size(), fp.size());
   std::vector<index_t> f_to_m_engaged(fp.size(), mp.size());
@@ -395,13 +386,9 @@ std::vector<index_t> gale_shapley(std::vector<std::list<index_t> > &mp,
 
     }
 
-    //if ((iterator_outer - mp.begin()) % 100 == 0) {
-    //  fprintf(stderr, "%s:%d: %lu/%lu\n", __FILE__, __LINE__, 
-    //      (iterator_outer - mp.begin()), mp.size()); }
-
-
   }
 
+  //FIXME: jesus christ, move declarations to use auto
   for (;;) {
     std::vector<index_t>::const_iterator m_iterator =
       std::find(m_to_f_engaged.begin(),
@@ -413,10 +400,6 @@ std::vector<index_t> gale_shapley(std::vector<std::list<index_t> > &mp,
 
     const index_t m = m_iterator - m_to_f_engaged.begin();
     const index_t w = mp[m].front();
-
-    /* if (m % 500 == 0 || w % 500 == 0) */
-    /* fprintf(stderr, "%s:%d: %hu<>%hu\n", __FILE__, __LINE__,m, w); */
-
 
     // Some man p is engaged to w
     index_t p = f_to_m_engaged[w];
@@ -435,9 +418,6 @@ std::vector<index_t> gale_shapley(std::vector<std::list<index_t> > &mp,
 
     //once paired, delete partners lower on preference list -> faster subsequent pairings
 
-    /* for (std::vector<std::pair<std::vector<std::list<index_t> >:: */
-    /*     iterator, std::list<index_t>::iterator> >::iterator */
-    /*     iterator = mp_index[w].begin(); */
     for (auto iterator = mp_index[w].begin();
         iterator != mp_index[w].end(); iterator++) {
       iterator->first->erase(iterator->second);
@@ -469,7 +449,7 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
   fprintf(stderr,"\n N EVENTS IN %s = %u \n",filename_0,nevent_0);
 
   size_t block_size = 2000;
-  /* size_t block_size = 1999; */
+  /* size_t block_size = 4000; */
   // block size is the size of the "pool" events are mixed in. 2000 is a good start as it reaches a stable
   // pairing solution with events that are very similar. Block size can be reduced to 1000 if limited N events.
 
@@ -523,7 +503,9 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
   //Note: remainder is only used here. Afterwards, the block of data is taken from the mixing index in the main loop
   //where consecutive blocks of dataset_1 are alreay separated by this remainder.
   int remainder_1 = (nevent_1-block_size*nblocks_1)/nblocks_1;
-  remainder_1=0;
+  remainder_1=0;//Setting Remainder to 0 enables faster I/O in correlations:
+  //enables us to read out 2k events at a time without worryiing about offset
+
   fprintf(stderr,"%d: nblocks_1 = %zu, remainder_1 = %i\n",__LINE__,nblocks_1,remainder_1);
 
   std::vector<std::vector<float> >feature_1_vec;
@@ -676,7 +658,7 @@ void write_root(std::map<size_t,std::vector<Long64_t> > Matches,
 
   fprintf(stderr,"\n%d: ROOT I/O done, opening new ROOT file \n",__LINE__);
 
-  TFile *newfile = new TFile(Form("%s_%luGeVTrack_paired_hdf5.root",rawname.data(),Track_Skim),"recreate");
+  TFile *newfile = new TFile(Form("%s_%luGeVTrack_paired_hdf5_kint7.root",rawname.data(),Track_Skim),"recreate");
   /* fprintf(stderr,"%d: Right Before Clone\n",__LINE__); */
   TTree *newtree = hi_tree->CloneTree(0);
   newtree->SetMaxTreeSize(1000000000000LL); //1000GB tree limit. *sigh*
@@ -797,7 +779,7 @@ void write_hdf5(std::map<size_t,std::vector<Long64_t> > Matches,
 
       //Grab the Mix Event
       mixing_data[iblock * mixing_row_size + s] = Matches[t][s];
-      fprintf(stderr,"%d: index = %i \n",__LINE__,iblock * mixing_row_size + s);
+      /* fprintf(stderr,"%d: index = %i \n",__LINE__,iblock * mixing_row_size + s); */
       //The rest deals with writing hdf5, 1 chunk at a time (blocksize)
     }//n_mix
     if (iblock == (block_size-1)) {
@@ -847,6 +829,7 @@ int main(int argc, char *argv[])
 
   unsigned int n_mix = atoi(mix_end)-atoi(mix_start);
   unsigned int block_size = 2000;
+  /* unsigned int block_size = 4000; */
 
   write_txt(Matches,trigger_file,mix_start,mix_end,track_skim);
   write_hdf5(Matches,block_size,trigger_file,n_mix,track_skim);
