@@ -77,13 +77,13 @@ TH1F ** get_trigger_histos(TTree * tree){
 
   //normalize histograms to 1.0
   //this way, 1/spline can be used as probability
-  //We want the frequency probabilyt, not the prob. density function. 
-  /* h_centrality->Scale(1.0/h_centrality->Integral("width"),"width"); //This  gives PDF, but isn't working. Understand div by Sum() and without width. */
-  /* h_centrality->Scale(1.0/h_centrality->Sum(),"width"); //This  gives PDF, but isn't working. Understand div by Sum() and without width. */
-  h_centrality->Scale(1.0/h_centrality->GetMaximum());
-  h_z_vertices->Scale(1.0/h_z_vertices->Integral());
-  h_flow->Scale(1.0/h_flow->Integral());
-  h_multiplicity->Scale(1.0/h_multiplicity->Integral());
+  //We want the relative frequency probabilyt, not the prob. density function. 
+  h_centrality->Scale(1.0/h_centrality->GetMaximum()); //applied as probability to MB dataset.
+  h_z_vertices->Scale(1.0/h_z_vertices->GetMaximum());
+  h_flow->Scale(1.0/h_flow->GetMaximum());
+  h_multiplicity->Scale(1.0/h_multiplicity->GetMaximum());
+  //trigger to MB normalization could be put here if desired
+  /* h_centrality->Scale(1.0/h_centrality->Sum(),"width"); //This  gives PDF, but isn't what we want.*/
 
   trig_histos[0] = h_centrality;
   trig_histos[1] = h_z_vertices;
