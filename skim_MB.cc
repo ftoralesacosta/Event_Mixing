@@ -123,8 +123,8 @@ TSpline3 ** get_trigger_splines(TH1F ** trig_histos){
 bool skim(TRandom3 * TRand, TSpline3 * cent_spline, Float_t centrality)
 {
   float r = TRand->Rndm();
-  float prob = 1.0-cent_spline->Eval(centrality);
-  std::cout<<std::endl<<r<<" "<<prob<<"bool = "<<(r < prob)<<std::endl;
+  float prob = cent_spline->Eval(centrality);
+  /* std::cout<<std::endl<<r<<" "<<prob<<"bool = "<<(r < prob)<<std::endl; */
   return(r < prob);
 }
 
