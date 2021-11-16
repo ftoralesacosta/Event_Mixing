@@ -140,10 +140,10 @@ int main(int argc, char *argv[])
       long mixednum;
       std::istringstream parser[1];
       parser[0].str(eventline);
-      int currentindex;
+      int currentindex 0;
       // Loop over mixed events, and fill the mixed_events histogram too
+      //getline auto-increments to next value, specified by separator "\t"
       for(int m = 0; m < mix_range; m++) {
-        currentindex = m/mix_range;
         getline(parser[currentindex], mixednum_string, '\t');
         mixing_data[iblock * mixing_row_size + m] = stoul(mixednum_string);
         /* std::cout<<currentindex<<" "<<mixednum_string<<std::endl; */
