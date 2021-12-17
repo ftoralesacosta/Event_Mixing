@@ -561,13 +561,6 @@ std::map<size_t,std::vector<Long64_t> > mix_gale_shapley(const char *filename_0,
 
       size_t event_start_1 = i * (block_size + remainder_1);
       size_t event_end_1 = event_start_1+block_size; 
-      /* size_t event_start_1 = i * nevent_1 / (nblocks_1+1); */
-      /* size_t event_end_1 = (i + nduplicate) * nevent_1 / */
-      /*     (nblocks_1+ nduplicate); */
-      /* size_t event_start_1 = i * nevent_1 / (nblocks_1);  //old */
-
-      //output of m = gale_shapley are consecutive elements of dataset_1. Need to convert back to raw event#
-      /* fprintf(stderr," %s:%d event_start_1 for mixing map output = %zu; Next = %zu\n\n",__FILE__,__LINE__,event_start_1,event_end_1); */
       std::vector <Long64_t>tempflat;
 
       //This basically restructures the output,
