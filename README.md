@@ -1,6 +1,6 @@
 # Event_Mixing
 
-This is a framework for event mixing using a Gale Shapely Stable Matching Algorithm to pair events that are similar. This framework is intended to be used with NTuples created using [this repo](https://github.com/alwina/ntuple-gj). Within the UCB group, this is known as the NTupilizer. There are two major advantages of using this over standard pooled or bin mixing:
+This is a framework for event mixing using a Gale Shapely Stable Matching Algorithm to pair collider events that are similar. This framework is intended to be used with NTuples created using [this repo](https://github.com/alwina/ntuple-gj). Within the UCB group, this is known as the NTupilizer. There are two major advantages of using this over standard pooled or bin mixing:
 
 1. Once set up, it is much, much faster (3+days -> 2hrs)
 2. Events are paired to be more similar on average
